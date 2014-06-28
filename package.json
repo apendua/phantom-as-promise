@@ -1,0 +1,26 @@
+{
+  "author": "Tomasz Lenarcik (apendua@gmail.com)",
+  "name": "phantom-as-promise",
+  "description": "Simple and reliable bridge between Node.js and PhantomJS",
+  "version": "0.0.0",
+  "homepage": "https://github.com/apendua/phantom-as-promise",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/apendua/phantom-as-promise.git"
+  },
+  "main": "node-phantom-simple.js",
+  "scripts": {
+    "test": "./run_tests"
+  },
+  "dependencies": {
+    "es6-promise": "^1.0.0",
+    "node-phantom-simple": "apendua/node-phantom-simple#random-port"
+  },
+  "devDependencies": {
+    "mocha": "^1.20.1"
+  },
+  "optionalDependencies": {},
+  "engines": {
+    "node": "0.10.x"
+  }
+}
