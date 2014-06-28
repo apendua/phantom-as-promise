@@ -10,7 +10,7 @@
   },
   "main": "node-phantom-simple.js",
   "scripts": {
-    "test": "./run_tests"
+    "test": "./test.js"
   },
   "dependencies": {
     "es6-promise": "^1.0.0",
