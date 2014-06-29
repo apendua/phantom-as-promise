@@ -1,3 +1,5 @@
+"use strict";
+
 var Phantom = require('node-phantom-simple');
 var Promise = require('es6-promise').Promise;
 
@@ -11,125 +13,85 @@ function either(first) {
   };
 }
 
-module.exports = {
-  PhantomAsPromise: function (options) {
-    return new PhantomAsPromise(new Promise(function (resolve, reject) {
-      Phantom.create(either(reject).or(resolve), options);
-    }));
+var promesify_base = {
+  always: function (callback) {
+    return this.then(callback, callback);
   },
-
-  PageAsPromise: function () {
-
-  }
 };
 
-function promesify(methods) {
-  return function () {
-    
+function promesify(config) {
+  var methods;
+  if (Array.isArray(config)) {
+    methods = config;
+  } else if (typeof config === 'object') {
+    methods = config.methods || [];
   }
+  //---------------------------------------------
+  var constructor = function (operand, promise) {
+    if (!promise) {
+      promise = operand;
+    }
+    this._operand = operand;
+    this._promise = promise;
+  }; // constructor
+  //----------------------------------------------------
+  constructor.prototype = Object.create(promesify_base);
+  //----------------------------------------------------
+  [ 'then', 'catch' ].forEach(function (name) {
+    constructor.prototype[name] = function () {
+      return new constructor(this._operand, this._promise[name].apply(this._promise, arguments));
+    };
+  });
+  methods.forEach(function (method) {
+    constructor.prototype[method] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      return (new constructor(this._operand, Promise.all([ this._operand, this._promise ]))).then(function (all) {
+        var original = all[0][method];
+        var callback = args[args.length-1];
+        //---------------------------------------------
+        return new Promise(function (resolve, reject) {
+          if (typeof callback === 'function') {
+            args[args.length-1] = function () {
+              resolve(callback.apply(this, arguments));
+            }
+          } else {
+            args.push(either(reject).or(resolve));
+          }
+          original.apply(all[0], args);
+        });
+      });
+    };
+  });
+  return constructor;
 }
 
-function PhantomAsPromise(phantom, promise) {
-  var self = this;
+var PhantomAsPromise = promesify([
+  'createPage', 'injectJs',
+  'addCookie', 'clearCookies', 'deleteCookie',
+  'set', 'get', 'exit'
+]);
 
-  if (!promise) {
-    promise = phantom;
-  }
-
-  [ 'then', 'catch' ].forEach(function (name) {
-    self[name] = function () {
-      return new PhantomAsPromise(phantom, promise[name].apply(promise, arguments));
-    }
-  });
-
-  [
-    'createPage',
-    'injectJs',
-    'addCookie',
-    'clearCookies',
-    'deleteCookie',
-    'set',
-    'get',
-    'exit'
-
-  ].forEach(function (method) {
-    self[method] = function () {
-      var args = Array.prototype.slice.call(arguments);
-      return new PhantomAsPromise(phantom, Promise.all([ phantom, promise ])).then(function (all) {
-        // after "phantom" and "promise" are fullfilled return another promise
-        // which will be resolved or rejected as soon as the corresponding method is done
-        var original = all[0][method];
-        var callback = args[args.length-1];
-        //---------------------------------------------
-        return new Promise(function (resolve, reject) {
-          if (typeof callback === 'function') {
-            args[args.length-1] = function () {
-              console.log('got result from', method);
-              resolve(callback.apply(this, arguments));
-            }
-          } else {
-            args.push(either(reject).or(resolve));
-          }
-          original.apply(all[0], args);
-        });
-      });
-    }
-  });
-
+PhantomAsPromise.prototype.page = function () {
+  return new PageAsPromise(this.createPage());
 };
 
-PhantomAsPromise.prototype = {
-  page: function () {
-    return new PageAsPromise(this.createPage());
-  },
+var PageAsPromise = promesify([
+  'addCookie', 'childFramesCount', 'childFramesName', 'clearCookies', 'close',
+  'currentFrameName', 'deleteCookie', 'evaluateJavaScript',
+  'evaluateAsync', 'getPage', 'go', 'goBack', 'goForward', 'includeJs',
+  'injectJs', 'open', 'openUrl', 'release', 'reload', 'render', 'renderBase64',
+  'sendEvent', 'setContent', 'stop', 'switchToFocusedFrame', 'switchToFrame',
+  'switchToFrame', 'switchToChildFrame', 'switchToChildFrame', 'switchToMainFrame',
+  'switchToParentFrame', 'uploadFile',
+  // these should be treated somewhat differently
+  'evaluate', 'set', 'get', 'evaluate'
+]);
+
+
+module.exports.PhantomAsPromise = function (options) {
+  return new PhantomAsPromise(new Promise(function (resolve, reject) {
+    Phantom.create(either(reject).or(resolve), options);
+  }));
 };
 
-function PageAsPromise(page, promise) {
-  var self = this;
-
-  if (!promise) {
-    promise = page;
-  }
-
-  [ 'then', 'catch' ].forEach(function (name) {
-    self[name] = function () {
-      return new PageAsPromise(page, promise[name].apply(promise, arguments));
-    }
-  });
-
-  [
-    'createPage',
-    'injectJs',
-    'addCookie',
-    'clearCookies',
-    'deleteCookie',
-    'set',
-    'get',
-    'exit'
-
-  ].forEach(function (method) {
-    self[method] = function () {
-      var args = Array.prototype.slice.call(arguments);
-      return new PageAsPromise(page, Promise.all([ page, promise ])).then(function (all) {
-        // after "page" and "promise" are fullfilled return another promise
-        // which will be resolved or rejected as soon as the corresponding method is done
-        var original = all[0][method];
-        var callback = args[args.length-1];
-        //---------------------------------------------
-        return new Promise(function (resolve, reject) {
-          if (typeof callback === 'function') {
-            args[args.length-1] = function () {
-              console.log('got result from', method);
-              resolve(callback.apply(this, arguments));
-            }
-          } else {
-            args.push(either(reject).or(resolve));
-          }
-          original.apply(all[0], args);
-        });
-      });
-    }
-  });
-
-};
-
+module.exports.PageAsPromise = PageAsPromise;
