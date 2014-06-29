@@ -59,6 +59,14 @@ describe('Page API.', function () {
       return pageAsPromise
         .open('http://127.0.0.1:' + server.address().port);
     });
+
+    it('should load the fixtures.', function () {
+      return pageAsPromise
+        .evaluate("function () { return window.emit.toString(); }")
+        .then(function (value) {
+          expect(value).to.match(/^function/);
+        })
+    });
     
     it('should be able to load hello world page.', function () {
       return pageAsPromise

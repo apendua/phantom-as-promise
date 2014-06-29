@@ -1,3 +1,4 @@
+var path = require('path');
 var crypto = require('crypto');
 var expect = require('chai').expect;
 var Promise = require('es6-promise').Promise;
@@ -5,6 +6,10 @@ var Promise = require('es6-promise').Promise;
 var DEFAULT_TIMEOUT = parseInt(process.env.DEFAULT_TIMEOUT) || 10000;
 
 module.exports = {
+
+  useFixtures: function () {
+    return this.injectJs(path.join(__dirname, 'fixtures.js'));
+  },
 
   always: function (callback) {
     return this.then(callback, callback);

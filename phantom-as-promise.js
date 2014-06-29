@@ -5,41 +5,26 @@ var Promise = require('es6-promise').Promise;
 var path = require('path');
 var promesify = require('./promesify');
 
-function either(first) {
-  return {
-    or: function (second) {
-      return function (arg1, arg2) {
-        return arg1 ? first(arg1) : second(arg2);
-      };
-    }
-  };
-}
+module.exports.PhantomAsPromise = PhantomAsPromise;
+module.exports.PageAsPromise = PageAsPromise;
 
-var PhantomAsPromise = promesify({
-  //factory: function PhantomAsPromise(options) {
-  //  this._operand = this._promise = new Promise(function (resolve, reject) {
-  //    Phantom.create(either(reject).or(resolve), options);
-  //  });
-  //},
+var _PhantomAsPromise = promesify({
   methods: [
     'createPage', 'injectJs', 'addCookie', 'clearCookies', 'deleteCookie', 'set', 'get', 'exit'
   ]
 });
 
-PhantomAsPromise.prototype.page = function () {
+_PhantomAsPromise.prototype.page = function () {
   return new PageAsPromise(this.createPage());
 };
 
-var PageAsPromise = promesify({
-  //constructor: function (operand, promise) {
-  //  this._operand = operand.then(function (page) {
-  //    page.onCallback = function () {
-  //      console.log(arguments);
-  //    }
-  //    return page;
-  //  });
-  //  this._promise = promise || this._operand;
-  //},
+function PhantomAsPromise (options) {
+  return new _PhantomAsPromise(new Promise(function (resolve, reject) {
+    Phantom.create(either(reject).or(resolve), options);
+  }));
+}
+
+var _PageAsPromise = promesify({
   helpers: require('./helpers'),
   methods: [
     'addCookie', 'childFramesCount', 'childFramesName', 'clearCookies', 'close',
@@ -54,18 +39,26 @@ var PageAsPromise = promesify({
   ]
 });
 
-//var original_open = PageAsPromise.prototype.open;
-//PageAsPromise.prototype.open = function () {
-//  return original_open.apply(this, arguments).injectJs(path.join(__dirname, 'fixtures.js'));
-//};
+var original_open = _PageAsPromise.prototype.open;
+_PageAsPromise.prototype.open = function () {
+  return original_open.apply(this, arguments).useFixtures();
+};
 
-// MODULE EXPORTS
-
-//module.exports.PhantomAsPromise = PhantomAsPromise;
-module.exports.PhantomAsPromise = function (options) {
-  return new PhantomAsPromise(new Promise(function (resolve, reject) {
-    Phantom.create(either(reject).or(resolve), options);
+function PageAsPromise(pagePromise) {
+  return new _PageAsPromise(pagePromise.then(function (page) {
+    page.onCallback = function () {
+      console.log(arguments);
+    }
+    return page;
   }));
-}
+};
 
-module.exports.PageAsPromise = PageAsPromise;
+function either(first) {
+  return {
+    or: function (second) {
+      return function (arg1, arg2) {
+        return arg1 ? first(arg1) : second(arg2);
+      };
+    }
+  };
+}
