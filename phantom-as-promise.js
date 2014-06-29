@@ -17,7 +17,17 @@ module.exports = {
       Phantom.create(either(reject).or(resolve), options);
     }));
   },
+
+  PageAsPromise: function () {
+
+  }
 };
+
+function promesify(methods) {
+  return function () {
+    
+  }
+}
 
 function PhantomAsPromise(phantom, promise) {
   var self = this;
@@ -66,4 +76,60 @@ function PhantomAsPromise(phantom, promise) {
     }
   });
 
-}
+};
+
+PhantomAsPromise.prototype = {
+  page: function () {
+    return new PageAsPromise(this.createPage());
+  },
+};
+
+function PageAsPromise(page, promise) {
+  var self = this;
+
+  if (!promise) {
+    promise = page;
+  }
+
+  [ 'then', 'catch' ].forEach(function (name) {
+    self[name] = function () {
+      return new PageAsPromise(page, promise[name].apply(promise, arguments));
+    }
+  });
+
+  [
+    'createPage',
+    'injectJs',
+    'addCookie',
+    'clearCookies',
+    'deleteCookie',
+    'set',
+    'get',
+    'exit'
+
+  ].forEach(function (method) {
+    self[method] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      return new PageAsPromise(page, Promise.all([ page, promise ])).then(function (all) {
+        // after "page" and "promise" are fullfilled return another promise
+        // which will be resolved or rejected as soon as the corresponding method is done
+        var original = all[0][method];
+        var callback = args[args.length-1];
+        //---------------------------------------------
+        return new Promise(function (resolve, reject) {
+          if (typeof callback === 'function') {
+            args[args.length-1] = function () {
+              console.log('got result from', method);
+              resolve(callback.apply(this, arguments));
+            }
+          } else {
+            args.push(either(reject).or(resolve));
+          }
+          original.apply(all[0], args);
+        });
+      });
+    }
+  });
+
+};
+
