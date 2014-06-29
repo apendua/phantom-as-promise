@@ -1,25 +1,39 @@
 var Phantom = require('node-phantom-simple');
 var Promise = require('es6-promise').Promise;
 
-module.exports = {
-
-  Phantom: function (options) {
-    return new Promise(function (resolve, reject) {
-      phantom.create(function (err, phantom) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(wrap(phantom));
-        }
-      }, options);
-    });
-  },
-
+function either(first) {
+  return {
+    or: function (second) {
+      return function (arg1, arg2) {
+        return arg1 ? first(arg1) : second(arg2);
+      };
+    }
+  };
 }
 
-function wrap(phantom) {
-  var wrapped = Object.create(phantom);
-  [ 'createPage',
+module.exports = {
+  PhantomAsPromise: function (options) {
+    return new PhantomAsPromise(new Promise(function (resolve, reject) {
+      Phantom.create(either(reject).or(resolve), options);
+    }));
+  },
+};
+
+function PhantomAsPromise(phantom, promise) {
+  var self = this;
+
+  if (!promise) {
+    promise = phantom;
+  }
+
+  [ 'then', 'catch' ].forEach(function (name) {
+    self[name] = function () {
+      return new PhantomAsPromise(phantom, promise[name].apply(promise, arguments));
+    }
+  });
+
+  [
+    'createPage',
     'injectJs',
     'addCookie',
     'clearCookies',
@@ -27,25 +41,29 @@ function wrap(phantom) {
     'set',
     'get',
     'exit'
+
   ].forEach(function (method) {
-    var original = phantom[method];
-    wrapped[method] = function () {
-      var callback = arguments[arguments.length-1];
-      if (typeof callback === 'function') {
-        return original.apply(phantom, arguments);
-      } else {
+    self[method] = function () {
+      var args = Array.prototype.slice.call(arguments);
+      return new PhantomAsPromise(phantom, Promise.all([ phantom, promise ])).then(function (all) {
+        // after "phantom" and "promise" are fullfilled return another promise
+        // which will be resolved or rejected as soon as the corresponding method is done
+        var original = all[0][method];
+        var callback = args[args.length-1];
+        //---------------------------------------------
         return new Promise(function (resolve, reject) {
-          var args = Array.prototype.slice.call(arguments);
-          args.push(function (err, result) {
-            if (err) {
-              reject(err);
-            } else {
-              resolve(result);
+          if (typeof callback === 'function') {
+            args[args.length-1] = function () {
+              console.log('got result from', method);
+              resolve(callback.apply(this, arguments));
             }
-          });
-          original.apply(phantom, args);
+          } else {
+            args.push(either(reject).or(resolve));
+          }
+          original.apply(all[0], args);
         });
-      }
+      });
     }
   });
+
 }
