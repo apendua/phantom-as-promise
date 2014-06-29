@@ -1,7 +1,10 @@
 "use strict";
 
+var events = require('events');
 var Phantom = require('node-phantom-simple');
 var Promise = require('es6-promise').Promise;
+var helpers = require('./helpers');
+var util = require('util');
 
 function either(first) {
   return {
@@ -22,26 +25,29 @@ var promesify_base = {
 function promesify(config) {
   var methods;
   if (Array.isArray(config)) {
-    methods = config;
+    methods = config; config = {};
   } else if (typeof config === 'object') {
     methods = config.methods || [];
+  } else {
+    config = {};
   }
-  //---------------------------------------------
-  var constructor = function (operand, promise) {
+  //----------------------------------------------
+  function constructor(operand, promise) {
     if (!promise) {
       promise = operand;
     }
     this._operand = operand;
     this._promise = promise;
   }; // constructor
-  //----------------------------------------------------
-  constructor.prototype = Object.create(promesify_base);
-  //----------------------------------------------------
+  //----------------------------------------------
+  util.inherits(constructor, events.EventEmitter);
+  //----------------------------------------------
   [ 'then', 'catch' ].forEach(function (name) {
     constructor.prototype[name] = function () {
       return new constructor(this._operand, this._promise[name].apply(this._promise, arguments));
     };
   });
+  // add methods related to operand
   methods.forEach(function (method) {
     constructor.prototype[method] = function () {
       var args = Array.prototype.slice.call(arguments);
@@ -62,6 +68,12 @@ function promesify(config) {
       });
     };
   });
+  // add heleprs if there are any
+  if (typeof config.helpers === 'object') {
+    Object.keys(config.helpers).forEach(function (key) {
+      constructor.prototype[key] = config.helpers[key];
+    });
+  }
   return constructor;
 }
 
@@ -84,7 +96,7 @@ var PageAsPromise = promesify([
   'switchToFrame', 'switchToChildFrame', 'switchToChildFrame', 'switchToMainFrame',
   'switchToParentFrame', 'uploadFile',
   // these should be treated somewhat differently
-  'evaluate', 'set', 'get', 'evaluate'
+  'evaluate', 'set', 'get', 'setFn'
 ]);
 
 
