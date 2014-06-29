@@ -15,7 +15,7 @@ describe('Page API.', function () {
   before(function (done) {
     server = http.createServer(function (request, response) {
       response.writeHead(200, {"Content-Type": "text/html"});
-      response.end('<html><head></head><body><h1>Hello World</h1></body></html>');
+      response.end('<html><head><title>Hello!</title></head><body><h1>Hello World</h1></body></html>');
     }).listen(port, '127.0.0.1');
     server.once('listening', done);
   });
@@ -61,7 +61,11 @@ describe('Page API.', function () {
     });
     
     it('should be able to load hello world page.', function () {
-      return pageAsPromise;
+      return pageAsPromise
+        .evaluate("function () { return document.title; }")
+        .then(function (value) {
+          expect(value).to.match(/^Hello/);
+        })
     });
 
   });
