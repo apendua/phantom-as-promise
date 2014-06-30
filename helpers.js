@@ -101,7 +101,6 @@ module.exports = {
     }); // then
   }, // promise
 
-
   wait: function (timeout, message, code) {
     var self = this;
     var args = Array.prototype.slice.call(arguments, 3).map(function (arg) {
@@ -152,105 +151,37 @@ module.exports = {
     }, selector);
   },
 
-};
-/*
-var makeBoundedPromise = function (self, constructor, connector, promise) {
-  // proxy the promise methods
-
-
-  self.evalAsync = function (code) {
-    var args = _.toArray(arguments).splice(1).map(function (arg) {
-      return JSON.stringify(arg);
-    });
-    // for safety make sure that the number of arguments is ok
-    while (args.length < code.length - 1) {
-      args.push("undefined");
-    }
-    // XXX pick some unique names for our control events
-    var res_event = crypto.randomBytes(8).toString('hex');
-    var err_event = crypto.randomBytes(8).toString('hex');
-    // ---------------------------------------------------
-    if (args.length === code.length - 1) {
-      // the last argument is the promise handle
-      args.push('{\n' +
-        '  resolve : function (res) { emit("' + res_event + '", res); },\n' +
-        '  reject  : function (err) { emit("' + err_event + '", err); },\n' +
-        '  done    : function (err, res) { err ? emit("' + err_event + '", err) : emit("' + res_event + '", res) }\n' +
-      '}');
-    }
-    // create a promise object
-    return self.then(function () {
-      return new Promise(function (resolve, reject) {
-        connector.eval(
-          // allow defining some timeout
-          'function () {\n' +
-          '  try {\n' +
-          '    (' + code.toString() + '(' + args.join(', ') + '));\n' +
-          '  } catch (err) {\n' +
-          '    emit("' + err_event + '", err.toString());\n' +
-          '  }\n' +
-          '}\n'
-        ).once(res_event, function (res) { resolve(res); })
-         .once(err_event, function (err) {
-          reject(new Error(_.isObject(err) ? err.message : err));
-        });
-      }); // PROMISE
-    }); // THEN
-  }; // EVAL ASYNC
-
-  // switch to another connector after we're done with the current promise
-
-  
-}; // makeBoundedPromise
-
-// GENERIC PROMISE
-
-GenericPromise.prototype = {
-
-  get: function (url) {
-    return this.promise(function (resolve, reject, url) {
-      HTTP.get(url, either(reject).or(resolve));
-    }, url);
+  waitUntilGone: function (selector, timeout) {
+    return this.wait(timeout || DEFAULT_TIMEOUT, 'until element ' + selector + ' is gone', function (selector) {
+      return !document.querySelector(selector);
+    }, selector);
   },
 
-  post: function (url, data) {
-    // TODO: check why we got a parse error when data is undefined
-    return this.promise(function (resolve, reject, url, data) {
-      HTTP.post(url, { data: data }, either(reject).or(resolve));
-    }, url, data || {});
-  },
-
-  updateShow: function (showId, updates) {
-    return this.eval(function (showId, updates) {
-      Shows.update({ _id: showId }, { $set: updates });
-    }, showId, updates);
-  },
-
-};
-
-_.extend(ClientPromise.prototype, {
-
-  signUp: function (options) {
-    return this.promise(function (resolve, reject, options) {
-      Accounts.createUser(options, either(reject).or(resolve));
-    }, options);
-  },
-
-  login: function (user, password) {
-    return this.evalAsync(function (user, password, promise) {
-      Meteor.loginWithPassword(user, password, promise.done);
-    }, user, password);
-  },
-
-  logout: function () {
-    return this.evalAsync(function (promise) {
-      Meteor.logout(promise.done);
-    });
+  waitUntilNotVisible: function (selector, timeout) {
+    return this.wait(timeout || DEFAULT_TIMEOUT, 'until element ' + selector + ' is hidden', function (selector) {
+      var element = document.querySelector(selector);
+      return !element || window.getComputedStyle(element).display === 'none';
+    }, selector);
   },
 
   getText: function (selector) {
     return this.waitForDOM(selector).eval(function (selector) {
-      return $(selector).text();
+      var element = document.querySelector(selector);
+      return element && element.innerHTML;
+    }, selector);
+  },
+
+  getValue: function (selector) {
+    return this.waitForDOM(selector).eval(function (selector) {
+      var element = document.querySelector(selector);
+      return element && element.value;
+    }, selector);
+  },
+
+  getClass: function (selector) {
+    return this.waitForDOM(selector).eval(function (selector) {
+      var element = document.querySelector(selector);
+      return (element && element.className) || '';
     }, selector);
   },
 
@@ -262,19 +193,24 @@ _.extend(ClientPromise.prototype, {
 
   setValue: function (selector, value) {
     return this.waitForDOM(selector).eval(function (selector, value) {
-      $(selector).val(value); // XXX I am not sure if we need this blur
+      var element = document.querySelector(selector);
+      if (element) {
+        element.value = value;
+      }
     }, selector, value);
   },
 
   focus: function (selector) {
     return this.waitForDOM(selector).eval(function (selector) {
-      $(selector).focus();
+      var element = document.querySelector(selector);
+      element && element.focus();
     }, selector);
   },
   
   blur: function (selector) {
     return this.waitForDOM(selector).eval(function (selector) {
-      $(selector).blur();
+      var element = document.querySelector(selector);
+      element && element.blur();
     }, selector);
   },
 
@@ -285,137 +221,26 @@ _.extend(ClientPromise.prototype, {
                .blur(selector);
   },
 
-  getValue: function (selector) {
-    return this.waitForDOM(selector).eval(function (selector) {
-      return $(selector).val();
-    }, selector);
+  // LOGGING
+
+  snapshot: function () {
+    return this.render('./snapshots/' + (new Date()).toString() + '.png');
   },
 
-  getClass: function (selector) {
-    return this.waitForDOM(selector).eval(function (selector) {
-      var $query = $(selector);
-      return $query.length > 0 ? $query.get(0).className : '';
-    }, selector);
-  },
-
-  waitForMeteor: function (timeout) {
-    return this.wait(timeout || DEFAULT_TIMEOUT, 'until Meteor is loaded', function () {
-      return !!window.Meteor;
-    });
-  },
-
-  waitForRoute: function (path, timeout) {
-    return this.eval(function (path) {
-      Router.go(path);
-    }, path)
-    .wait(timeout || DEFAULT_TIMEOUT, 'until current path is ' + path, function (path) {
-      var controller = Router.current();
-      if (controller && controller.path === path && controller.ready()) {
-        return true;
-      }
-    }, path);
-  },
-  
-  waitUntilGone: function (selector) {
-    return this.wait(timeout || DEFAULT_TIMEOUT, 'until element ' + selector + ' is gone', function (selector) {
-      return $(selector).length === 0;
-    }, selector);
-  },
-
-  waitUntilNotVisible: function (selector) {
-    return this.wait(timeout || DEFAULT_TIMEOUT, 'until element ' + selector + ' is gone', function (selector) {
-      return !$(selector).is(':visible');
-    }, selector);
-  },
-  /*
-  waitForDOM: function (selector, timeout) {
-    return this.promise(function (resolve, reject, selector, timeout) {
-      var handle;
-      try {
-        waitForDOM(selector, function () {
-          // XXX I am not sure if we have to clearTimeout
-          handle && clearTimeout(handle);
-          resolve();
-        });
-        if (timeout) {
-          handle = setTimeout(function () {
-            reject('Element ' + selector + ' not found.');
-          }, timeout);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    }, selector, timeout !== undefined ? timeout : DEFAULT_TIMEOUT );
-    // TODO: this constant should be defined somewhere else
-  },
-
-  waitForRoute: function (path, timeout) {
-    return this.promise(function (resolve, reject, path, timeout) {
-      var handle;
-      try {
-        waitForRoute(path, function () {
-          handle && clearTimeout(handle);
-          resolve();
-        });
-        if (timeout) {
-          handle = setTimeout(function () {
-            reject('Timout while waiting for route ' + path + '.');
-          }, timeout);
-        }
-      } catch (err) {
-        reject(err);
-      }
-    }, path, timeout !== undefined ? timeout : DEFAULT_TIMEOUT );
-  },
-  
-  waitAndClick: function (selector) {
-    return this.waitForDOM(selector).click(selector);
-  },
-  
-  waitUntilGone: function (selector) {
-    return this.evalAsync(function (selector, promise) {
-      try {
-        waitForDOM(function () {
-          return $(selector).length === 0;
-        }, promise.resolve);
-      } catch (err) {
-        promise.reject(err);
-      }
-    }, selector);
-  },
-
-  waitUntilNotVisible: function (selector) {
-    return this.evalAsync(function (selector, promise) {
-      try {
-        waitForDOM(function () {
-          return !$(selector).is(':visible');
-        }, promise.resolve);
-      } catch (err) {
-        promise.reject(err);
-      }
-    }, selector);
-  },
-  */
-
-/*  afterFlush: function () {
-    return this.promise(function (resolve) {
-      Deps.afterFlush(resolve);
-    });
-  },
+  // ASSERTIONS
 
   checkIfExist: function (selector) {
     return this.eval(function (selector) {
-      return $(selector).length > 0;
+      return !!document.querySelector(selector);
     }, selector);
   },
 
   checkIfVisible: function (selector) {
     return this.eval(function (selector) {
-      return $(selector).is(':visible');
+      var element = document.querySelector(selector);
+      return !!element && window.getComputedStyle(element).display !== 'none';
     }, selector);
   },
-
-  // ASSERTIONS
 
   expectExist: function (selector) {
     return this.checkIfExist(selector).then(function (exist) {
@@ -441,13 +266,13 @@ _.extend(ClientPromise.prototype, {
     });
   },
 
-  expectValueToBeEqual: function (selector, reference) {
+  expectValueToEqual: function (selector, reference) {
     return this.getValue(selector).then(function (value) {
       expect(value).to.be.eql(reference);
     });
   },
 
-  expectTextToBeEqual: function (selector, value) {
+  expectTextToEqual: function (selector, value) {
     return this.getText(selector).then(function (text) {
       expect(text).to.be.eql(value);
     });
@@ -462,6 +287,72 @@ _.extend(ClientPromise.prototype, {
   expectToHaveClass: function (selector, value) {
     return this.getClass(selector).then(function (style) {
       expect(style).to.contain(value);
+    });
+  },
+
+};
+
+/*
+_.extend(ClientPromise.prototype, {
+
+  get: function (url) {
+    return this.promise(function (resolve, reject, url) {
+      HTTP.get(url, either(reject).or(resolve));
+    }, url);
+  },
+
+  post: function (url, data) {
+    // TODO: check why we got a parse error when data is undefined
+    return this.promise(function (resolve, reject, url, data) {
+      HTTP.post(url, { data: data }, either(reject).or(resolve));
+    }, url, data || {});
+  },
+
+  updateShow: function (showId, updates) {
+    return this.eval(function (showId, updates) {
+      Shows.update({ _id: showId }, { $set: updates });
+    }, showId, updates);
+  },
+
+  signUp: function (options) {
+    return this.promise(function (resolve, reject, options) {
+      Accounts.createUser(options, either(reject).or(resolve));
+    }, options);
+  },
+
+  login: function (user, password) {
+    return this.promise(function (resolve, reject, user, password) {
+      Meteor.loginWithPassword(user, password, either(reject).or(resolve));
+    }, user, password);
+  },
+
+  logout: function () {
+    return this.promise(function (resolve, reject) {
+      Meteor.logout(either(reject).or(resolve));
+    });
+  },
+
+  waitForMeteor: function (timeout) {
+    return this.wait(timeout || DEFAULT_TIMEOUT, 'until Meteor is loaded', function () {
+      return !!window.Meteor;
+    });
+  },
+
+  waitForRoute: function (path, timeout) {
+    return this.eval(function (path) {
+      Router.go(path);
+    }, path)
+    .wait(timeout || DEFAULT_TIMEOUT, 'until current path is ' + path, function (path) {
+      var controller = Router.current();
+      if (controller && controller.path === path && controller.ready()) {
+        return true;
+      }
+    }, path);
+  },
+  
+  /*afterFlush: function () {
+    return this.promise(function (resolve) {
+      Deps.afterFlush(resolve);
     });
   },
 
@@ -481,8 +372,4 @@ _.extend(ClientPromise.prototype, {
 
 });
 
-// ALIASES
-
-ClientPromise.prototype.expectValueToEqual = ClientPromise.prototype.expectValueToBeEqual;
-ClientPromise.prototype.expectTextToEqual  = ClientPromise.prototype.expectTextToBeEqual;
 */

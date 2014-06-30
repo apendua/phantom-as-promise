@@ -124,12 +124,55 @@ describe('Page API.', function () {
             .sleep(100)
             .eval(function () {
               var element = document.createElement('h2');
-              document.querySelector('h1').appendChild(element);
+              document.querySelector('body').appendChild(element);
             }),
 
           pageAsPromise
             .waitForDOM('h2'),
         ]);
+      });
+
+      it('should be able to read innerHTML', function () {
+        return pageAsPromise
+          .getText('h1')
+          .then(function (text) {
+            expect(text).to.match(/^Hello/);
+          })
+      });
+
+
+      it('should be able to emulate keyboard.', function () {
+        return pageAsPromise
+          .eval(function () {
+            var element = document.createElement('input');
+            element.setAttribute('id', 'myCustomInput');
+            element.setAttribute('type', 'text');
+            document.querySelector('body').appendChild(element);
+          })
+          .sendKeys('#myCustomInput', "abcd")
+          .getValue('#myCustomInput')
+          .then(function (value) {
+            expect(value).to.equal('abcd');
+          })
+      });
+
+      it('should be able to wait until element is not visible.', function () {
+        return pageAsPromise
+          .eval(function () {
+            var element = document.createElement('h2');
+            element.setAttribute('id', 'myCustomElement');
+            document.querySelector('body').appendChild(element);
+          })
+          .then(function () {
+            return Promise.all([
+              pageAsPromise.waitUntilNotVisible('#myCustomElement'),
+              pageAsPromise.eval(function () {
+                setTimeout(function () {
+                  document.querySelector('#myCustomElement').style.display = "none";
+                }, 1000);
+              })
+            ]);
+          });
       });
 
     });
