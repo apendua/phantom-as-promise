@@ -1,3 +1,5 @@
+"use strict";
+
 var path = require('path');
 var crypto = require('crypto');
 var expect = require('chai').expect;
@@ -6,6 +8,8 @@ var Promise = require('es6-promise').Promise;
 var DEFAULT_TIMEOUT = parseInt(process.env.DEFAULT_TIMEOUT) || 10000;
 
 module.exports = {
+
+  default_timeout: DEFAULT_TIMEOUT,
 
   useFixtures: function () {
     return this.injectJs(path.join(__dirname, 'fixtures.js'));
@@ -289,70 +293,6 @@ module.exports = {
 };
 
 /*
-_.extend(ClientPromise.prototype, {
-
-  get: function (url) {
-    return this.promise(function (resolve, reject, url) {
-      HTTP.get(url, either(reject).or(resolve));
-    }, url);
-  },
-
-  post: function (url, data) {
-    // TODO: check why we got a parse error when data is undefined
-    return this.promise(function (resolve, reject, url, data) {
-      HTTP.post(url, { data: data }, either(reject).or(resolve));
-    }, url, data || {});
-  },
-
-  updateShow: function (showId, updates) {
-    return this.eval(function (showId, updates) {
-      Shows.update({ _id: showId }, { $set: updates });
-    }, showId, updates);
-  },
-
-  signUp: function (options) {
-    return this.promise(function (resolve, reject, options) {
-      Accounts.createUser(options, either(reject).or(resolve));
-    }, options);
-  },
-
-  login: function (user, password) {
-    return this.promise(function (resolve, reject, user, password) {
-      Meteor.loginWithPassword(user, password, either(reject).or(resolve));
-    }, user, password);
-  },
-
-  logout: function () {
-    return this.promise(function (resolve, reject) {
-      Meteor.logout(either(reject).or(resolve));
-    });
-  },
-
-  waitForMeteor: function (timeout) {
-    return this.wait(timeout || DEFAULT_TIMEOUT, 'until Meteor is loaded', function () {
-      return !!window.Meteor;
-    });
-  },
-
-  waitForRoute: function (path, timeout) {
-    return this.eval(function (path) {
-      Router.go(path);
-    }, path)
-    .wait(timeout || DEFAULT_TIMEOUT, 'until current path is ' + path, function (path) {
-      var controller = Router.current();
-      if (controller && controller.path === path && controller.ready()) {
-        return true;
-      }
-    }, path);
-  },
-  
-  /*afterFlush: function () {
-    return this.promise(function (resolve) {
-      Deps.afterFlush(resolve);
-    });
-  },
-
-  // helpers
 
   // TODO: stream this one over some socket and view it in a browser
   //       or, we can just use phantomJS to take snapshots, hmm?
@@ -365,7 +305,5 @@ _.extend(ClientPromise.prototype, {
         console.log(html);
       });
   },
-
-});
 
 */

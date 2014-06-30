@@ -2,11 +2,11 @@
 
 var Phantom = require('node-phantom-simple');
 var Promise = require('es6-promise').Promise;
-var path = require('path');
 var promesify = require('./promesify');
 
 module.exports.PhantomAsPromise = PhantomAsPromise;
 module.exports.PageAsPromise = PageAsPromise;
+module.exports.meteor_helpers = require('./meteor');
 
 function PhantomAsPromise (options) {
   var constructor = promesify({
