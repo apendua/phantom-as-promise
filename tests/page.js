@@ -4,6 +4,7 @@ var PhantomAsPromise = require('../phantom-as-promise').PhantomAsPromise;
 var PageAsPromise = require('../phantom-as-promise').PageAsPromise;
 var either = require('../phantom-as-promise').eaither;
 var http = require('http');
+var meteor_helpers = require('../phantom-as-promise').meteor_helpers;
 
 describe('Page API.', function () {
 
@@ -22,7 +23,7 @@ describe('Page API.', function () {
 
   before(function () {
     phantomAsPromise = new PhantomAsPromise();
-    pageAsPromise = new PageAsPromise(phantomAsPromise.createPage());
+    pageAsPromise = new PageAsPromise(phantomAsPromise.createPage(), meteor_helpers);
     return Promise.all([
       phantomAsPromise, pageAsPromise
     ]);
@@ -173,6 +174,17 @@ describe('Page API.', function () {
               })
             ]);
           });
+      });
+
+      it('should be able to use user defined helpers.', function () {
+        return Promise.all([
+          pageAsPromise.waitForMeteor(),
+          pageAsPromise.eval(function () {
+            setTimeout(function () {
+              window.Meteor = {};
+            }, 100);
+          })
+        ]);
       });
 
     });

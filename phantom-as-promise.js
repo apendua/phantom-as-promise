@@ -8,13 +8,13 @@ module.exports.PhantomAsPromise = PhantomAsPromise;
 module.exports.PageAsPromise = PageAsPromise;
 module.exports.meteor_helpers = require('./meteor');
 
-function PhantomAsPromise (options) {
+function PhantomAsPromise (options, helpers) {
   var constructor = promesify({
     methods: [ 'createPage', 'injectJs', 'addCookie', 'clearCookies', 'deleteCookie', 'set', 'get', 'exit' ]
   });
 
   constructor.prototype.page = function () {
-    return new PageAsPromise(this.createPage());
+    return new PageAsPromise(this.createPage(), helpers);
   };
 
   return new constructor(new Promise(function (resolve, reject) {

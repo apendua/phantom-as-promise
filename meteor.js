@@ -2,13 +2,13 @@ var helpers = require('./helpers');
 
 module.exports = {
 
-  get: function (url) {
+  GET: function (url) {
     return this.promise(function (resolve, reject, url) {
       HTTP.get(url, either(reject).or(resolve));
     }, url);
   },
 
-  post: function (url, data) {
+  POST: function (url, data) {
     // TODO: check why we got a parse error when data is undefined
     return this.promise(function (resolve, reject, url, data) {
       HTTP.post(url, { data: data }, either(reject).or(resolve));
