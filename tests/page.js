@@ -93,10 +93,23 @@ describe('Page API.', function () {
 
       it('should be able to use promise helper.', function () {
         return pageAsPromise
-          .promise(function (resolve, reject) {
-            setTimeout(function () { resolve() }, 500);
+          .promise(function (resolve) {
+            setTimeout(resolve, 10);
           });
       });
+
+      it('Should be able to setTimeout on client.', function () {
+        var startTime = (new Date()).getTime();
+        return pageAsPromise
+          .promise(function (resolve) {
+            setTimeout(resolve, 2000);
+          })
+          .then(function () {
+            var endTime = (new Date()).getTime();
+            expect(endTime - startTime).to.be.at.least(2000);
+          });
+      });
+
 
     });
 
