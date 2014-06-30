@@ -35,7 +35,8 @@ var _PageAsPromise = promesify({
     'switchToFrame', 'switchToChildFrame', 'switchToChildFrame', 'switchToMainFrame',
     'switchToParentFrame', 'uploadFile',
     // these should be treated somewhat differently
-    'evaluate', 'set', 'get', 'setFn'
+    'evaluate', 'set', 'get', 'setFn', 'once'
+    // --------------------------------------
   ]
 });
 
@@ -46,8 +47,10 @@ _PageAsPromise.prototype.open = function () {
 
 function PageAsPromise(pagePromise) {
   return new _PageAsPromise(pagePromise.then(function (page) {
-    page.onCallback = function () {
-      console.log(arguments);
+    page.onCallback = function (args) {
+      if (Array.isArray(args)) {
+        page.emit.apply(page, args);
+      }
     }
     return page;
   }));

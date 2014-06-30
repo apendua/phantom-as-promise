@@ -76,6 +76,23 @@ describe('Page API.', function () {
         })
     });
 
+    it('should be able to emit an event.', function (done) {
+      pageAsPromise.evaluate("function () { emit('myCustomEvent') }");
+      pageAsPromise.once('myCustomEvent', done);
+    });
+
+    describe('Custom helpers.', function () {
+
+      it('should be able to use eval helper.', function () {
+        return pageAsPromise
+          .eval(function () { return document.title; })
+          .then(function (value) {
+            expect(value).to.match(/^Hello/);
+          })
+      });
+
+    });
+
   });
   
 });

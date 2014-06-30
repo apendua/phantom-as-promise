@@ -24,7 +24,7 @@ module.exports = {
   },
 
   eval: function (code) {
-    var slef = this;
+    var self = this;
     var args = Array.prototype.slice.call(arguments, 1).map(function (arg) {
       return JSON.stringify(arg);
     });
@@ -41,7 +41,7 @@ module.exports = {
         self.once(err_event, function (err) {
           reject(new Error(typeof err === 'object' ? err.message : err));
         });
-        return self.evaluate(
+        self.evaluate(
           'function () {\n' +
           '  try {\n' +
           '    var res = (' + code.toString() + '(' + args.join(', ') + '));\n' +

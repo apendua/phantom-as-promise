@@ -6,16 +6,6 @@ var util = require('util');
 
 module.exports = promesify;
 
-function either(first) {
-  return {
-    or: function (second) {
-      return function (arg1, arg2) {
-        return arg1 ? first(arg1) : second(arg2);
-      };
-    }
-  };
-}
-
 function promesify(config) {
   var methods;
   if (Array.isArray(config)) {
@@ -31,7 +21,7 @@ function promesify(config) {
     this._promise = promise || operand;
   }; // constructor
   //----------------------------------------------
-  util.inherits(constructor, events.EventEmitter);
+  //util.inherits(constructor, events.EventEmitter);
   //----------------------------------------------
   [ 'then', 'catch' ].forEach(function (name) {
     constructor.prototype[name] = function () {
@@ -69,4 +59,14 @@ function promesify(config) {
     });
   }
   return constructor;
+}
+
+function either(first) {
+  return {
+    or: function (second) {
+      return function (arg1, arg2) {
+        return arg1 ? first(arg1) : second(arg2);
+      };
+    }
+  };
 }
