@@ -146,6 +146,12 @@ module.exports = {
     }); // then
   }, // wait
 
+  waitForDOM: function (selector, timeout) {
+    return this.wait(timeout || DEFAULT_TIMEOUT, 'until element ' + selector + ' is present', function (selector) {
+      return !!document.querySelector(selector);
+    }, selector);
+  },
+
 };
 /*
 var makeBoundedPromise = function (self, constructor, connector, promise) {
@@ -193,20 +199,7 @@ var makeBoundedPromise = function (self, constructor, connector, promise) {
   }; // EVAL ASYNC
 
   // switch to another connector after we're done with the current promise
-  self.switchTo = function (anotherConnector) {
-    // TODO: decide what we should do if we got a wrong parameter
-    if (anotherConnector.appUrl) {
-      return new ClientPromise(anotherConnector, Promise.resolve(promise));
-    }
-    return new ServerPromise(anotherConnector, Promise.resolve(promise));
-  };
 
-  // this could go to a common prototype
-  self.expectError = function (callback) {
-    return self.then(function () {
-      throw new Error('Expected an exception to be throw.')
-    }, callback);
-  };
   
 }; // makeBoundedPromise
 
@@ -309,12 +302,6 @@ _.extend(ClientPromise.prototype, {
     return this.wait(timeout || DEFAULT_TIMEOUT, 'until Meteor is loaded', function () {
       return !!window.Meteor;
     });
-  },
-
-  waitForDOM: function (selector, timeout) {
-    return this.wait(timeout || DEFAULT_TIMEOUT, 'until element ' + selector + ' is present', function (selector) {
-      return $(selector).length > 0;
-    }, selector);
   },
 
   waitForRoute: function (path, timeout) {

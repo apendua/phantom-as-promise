@@ -118,6 +118,20 @@ describe('Page API.', function () {
           }, limit);
       });
 
+      it('should be able to wait for DOM.', function () {
+        return Promise.all([
+          pageAsPromise
+            .sleep(100)
+            .eval(function () {
+              var element = document.createElement('h2');
+              document.querySelector('h1').appendChild(element);
+            }),
+
+          pageAsPromise
+            .waitForDOM('h2'),
+        ]);
+      });
+
     });
 
   });

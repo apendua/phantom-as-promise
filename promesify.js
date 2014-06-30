@@ -30,7 +30,17 @@ function promesify(config) {
   });
   constructor.prototype.always = function (callback) {
     return this.then(callback, callback);
-  }
+  };
+  constructor.prototype.expectError = function (callback) {
+    return this.then(function () {
+      throw new Error('Expected an exception to be throw.')
+    }, callback);
+  };
+  constructor.prototype.switchTo = function (anotherOperand) {
+    return this.then(function () {
+      return new constructor(anotherOperand, Promise.resolve(this._promise));
+    });
+  };
   // add methods related to operand
   methods.forEach(function (method) {
     constructor.prototype[method] = function () {
