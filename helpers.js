@@ -192,64 +192,6 @@ var makeBoundedPromise = function (self, constructor, connector, promise) {
     }); // THEN
   }; // EVAL ASYNC
 
-  // some syntactic sugar
-  self.promise = function (code) {
-    var args = _.toArray(arguments).splice(1).map(function (arg) {
-      return JSON.stringify(arg);
-    });
-    // XXX pick some unique names for our control events
-    var res_event = crypto.randomBytes(8).toString('hex');
-    var err_event = crypto.randomBytes(8).toString('hex');
-    // ---------------------------------------------------
-    // create a promise object
-    return self.then(function () {
-      if (args.length > Math.max(code.length - 2, 0)) {
-        throw new Error('You passed too many arguments: ' + args.length + ' given but expected ' + (code.length - 2) + '.');
-      } else {
-        // TODO: also check if arguments are named properly
-        args.unshift('function (err) { emit("' + err_event + '", err); }'); // reject
-        args.unshift('function (res) { emit("' + res_event + '", res); }'); // resolve
-      }
-      return new Promise(function (resolve, reject) {
-        connector.eval(
-          // allow defining some timeout
-          'function () {\n' +
-          '  var either = function (first) {\n' +
-          '    return {\n' +
-          '      or: function (second) {\n' +
-          '        return function (arg1, arg2) {\n' +
-          '          return arg1 ? first(arg1) : second(arg2);\n' +
-          '        };\n' +
-          '      }\n' +
-          '    };\n' +
-          '  };\n' +
-          '  try {\n' +
-          '    (' + code.toString() + '(' + args.join(', ') + '));\n' +
-          '  } catch (err) {\n' +
-          '    emit("' + err_event + '", err.toString());\n' +
-          '  }\n' +
-          '}\n'
-        ).once(res_event, function (res) { resolve(res); })
-         .once(err_event, function (err) {
-          reject(new Error(_.isObject(err) ? err.message : err));
-        });
-      }); // PROMISE
-    }); // THEN
-  }; // PROMISE
-
-  // XXX I am not sure if we should wait for the previous promise
-  self.once = function (name, callback) {
-    return new constructor(connector, new Promise(function (resolve, reject) {
-      connector.once(name, function () {
-        try {
-          resolve(callback.apply(null, arguments));
-        } catch (err) {
-          reject(err);
-        }
-      });
-    })); // CONSTRUCTOR
-  }; // ONCE
-
   // switch to another connector after we're done with the current promise
   self.switchTo = function (anotherConnector) {
     // TODO: decide what we should do if we got a wrong parameter
@@ -269,10 +211,6 @@ var makeBoundedPromise = function (self, constructor, connector, promise) {
 }; // makeBoundedPromise
 
 // GENERIC PROMISE
-
-GenericPromise = function (constructor, connector, promise) {
-  makeBoundedPromise(this, constructor, connector, promise);
-};
 
 GenericPromise.prototype = {
 
