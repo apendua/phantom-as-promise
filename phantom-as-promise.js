@@ -48,8 +48,14 @@ _PageAsPromise.prototype.open = function () {
 function PageAsPromise(pagePromise) {
   return new _PageAsPromise(pagePromise.then(function (page) {
     page.onCallback = function (args) {
-      if (Array.isArray(args)) {
-        page.emit.apply(page, args);
+      // TODO: also consider different scenarios
+      try {
+        args = JSON.parse(args);
+        if (Array.isArray(args)) {
+          page.emit.apply(page, args);
+        }
+      } catch (err) {
+        // ignore
       }
     }
     return page;

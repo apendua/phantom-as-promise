@@ -91,6 +91,13 @@ describe('Page API.', function () {
           })
       });
 
+      it('should be able to use promise helper.', function () {
+        return pageAsPromise
+          .promise(function (resolve, reject) {
+            setTimeout(function () { resolve() }, 500);
+          });
+      });
+
     });
 
   });

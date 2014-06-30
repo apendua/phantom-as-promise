@@ -55,6 +55,52 @@ module.exports = {
     }); // then
   }, // eval
 
+  promise: function (code) {
+    var self = this;
+    var args = Array.prototype.slice.call(arguments, 1).map(function (arg) {
+      return JSON.stringify(arg);
+    });
+    // XXX pick some unique names for our control events
+    var res_event = crypto.randomBytes(8).toString('hex');
+    var err_event = crypto.randomBytes(8).toString('hex');
+    // ---------------------------------------------------
+    // create a promise object
+    return self.then(function () {
+      if (args.length > Math.max(code.length - 2, 0)) {
+        throw new Error('You passed too many arguments: ' + args.length + ' given but expected ' + (code.length - 2) + '.');
+      } else {
+        // TODO: also check if arguments are named properly
+        args.unshift('function (err) { emit("' + err_event + '", err); }'); // reject
+        args.unshift('function (res) { emit("' + res_event + '", res); }'); // resolve
+      }
+      return new Promise(function (resolve, reject) {
+        self.once(res_event, function (res) { resolve(res); });
+        self.once(err_event, function (err) {
+          reject(typeof err === 'object' ? err.message : err);
+        });
+        self.evaluate(
+          // allow defining some timeout
+          'function () {\n' +
+          '  var either = function (first) {\n' +
+          '    return {\n' +
+          '      or: function (second) {\n' +
+          '        return function (arg1, arg2) {\n' +
+          '          return arg1 ? first(arg1) : second(arg2);\n' +
+          '        };\n' +
+          '      }\n' +
+          '    };\n' +
+          '  };\n' +
+          '  try {\n' +
+          '    (' + code.toString() + ')(' + args.join(', ') + ');\n' +
+          '  } catch (err) {\n' +
+          '    emit("' + err_event + '", err.toString());\n' +
+          '  }\n' +
+          '}\n'
+        );
+      }); // new Promise
+    }); // then
+  }, // promise
+
 };
 /*
 var makeBoundedPromise = function (self, constructor, connector, promise) {
