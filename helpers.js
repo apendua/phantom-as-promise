@@ -11,10 +11,6 @@ module.exports = {
     return this.injectJs(path.join(__dirname, 'fixtures.js'));
   },
 
-  always: function (callback) {
-    return this.then(callback, callback);
-  },
-
   sleep: function (timeout) {
     return this.then(function () {
       return new Promise(function (resolve, reject) {

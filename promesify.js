@@ -15,8 +15,8 @@ function promesify(config) {
   } else {
     config = {};
   }
-  //----------------------------------------------
-  function constructor(operand, promise) {
+  //------------------------------------------------------
+  var constructor = function Promesify(operand, promise) {
     this._operand = operand;
     this._promise = promise || operand;
   }; // constructor
@@ -63,9 +63,17 @@ function promesify(config) {
     };
   });
   // add heleprs if there are any
-  if (typeof config.helpers === 'object') {
-    Object.keys(config.helpers).forEach(function (key) {
-      constructor.prototype[key] = config.helpers[key];
+  if (config.helpers) {
+    if (!Array.isArray(config.helpers)) {
+      config.helpers = [ config.helpers ];
+    }
+    config.helpers.forEach(function (helpers) {
+      Object.keys(helpers).forEach(function (key) {
+        if (constructor.prototype[key] !== undefined) {
+          console.warn('helper ' + key + ' conflicts with some other method');
+        }
+        constructor.prototype[key] = helpers[key];
+      });
     });
   }
   return constructor;

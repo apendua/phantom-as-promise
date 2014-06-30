@@ -8,45 +8,49 @@ var promesify = require('./promesify');
 module.exports.PhantomAsPromise = PhantomAsPromise;
 module.exports.PageAsPromise = PageAsPromise;
 
-var _PhantomAsPromise = promesify({
-  methods: [
-    'createPage', 'injectJs', 'addCookie', 'clearCookies', 'deleteCookie', 'set', 'get', 'exit'
-  ]
-});
-
-_PhantomAsPromise.prototype.page = function () {
-  return new PageAsPromise(this.createPage());
-};
-
 function PhantomAsPromise (options) {
-  return new _PhantomAsPromise(new Promise(function (resolve, reject) {
+  var constructor = promesify({
+    methods: [ 'createPage', 'injectJs', 'addCookie', 'clearCookies', 'deleteCookie', 'set', 'get', 'exit' ]
+  });
+
+  constructor.prototype.page = function () {
+    return new PageAsPromise(this.createPage());
+  };
+
+  return new constructor(new Promise(function (resolve, reject) {
     Phantom.create(either(reject).or(resolve), options);
   }));
 }
 
-var _PageAsPromise = promesify({
-  helpers: require('./helpers'),
-  methods: [
-    'addCookie', 'childFramesCount', 'childFramesName', 'clearCookies', 'close',
-    'currentFrameName', 'deleteCookie', 'evaluateJavaScript',
-    'evaluateAsync', 'getPage', 'go', 'goBack', 'goForward', 'includeJs',
-    'injectJs', 'open', 'openUrl', 'release', 'reload', 'render', 'renderBase64',
-    'sendEvent', 'setContent', 'stop', 'switchToFocusedFrame', 'switchToFrame',
-    'switchToFrame', 'switchToChildFrame', 'switchToChildFrame', 'switchToMainFrame',
-    'switchToParentFrame', 'uploadFile',
-    // these should be treated somewhat differently
-    'evaluate', 'set', 'get', 'setFn', 'once'
-    // --------------------------------------
-  ]
-});
+function PageAsPromise(pagePromise, helpers) {
+  var all_helpers = [ require('./helpers') ];
 
-var original_open = _PageAsPromise.prototype.open;
-_PageAsPromise.prototype.open = function () {
-  return original_open.apply(this, arguments).useFixtures();
-};
+  if (helpers) {
+    all_helpers.push(helpers);
+  }
 
-function PageAsPromise(pagePromise) {
-  return new _PageAsPromise(pagePromise.then(function (page) {
+  var constructor = promesify({
+    helpers: all_helpers,
+    methods: [
+      'addCookie', 'childFramesCount', 'childFramesName', 'clearCookies', 'close',
+      'currentFrameName', 'deleteCookie', 'evaluateJavaScript',
+      'evaluateAsync', 'getPage', 'go', 'goBack', 'goForward', 'includeJs',
+      'injectJs', 'open', 'openUrl', 'release', 'reload', 'render', 'renderBase64',
+      'sendEvent', 'setContent', 'stop', 'switchToFocusedFrame', 'switchToFrame',
+      'switchToFrame', 'switchToChildFrame', 'switchToChildFrame', 'switchToMainFrame',
+      'switchToParentFrame', 'uploadFile',
+      // these should be treated somewhat differently
+      'evaluate', 'set', 'get', 'setFn', 'once'
+      // --------------------------------------
+    ]
+  });
+
+  var original_open = constructor.prototype.open;
+  constructor.prototype.open = function () {
+    return original_open.apply(this, arguments).useFixtures();
+  };
+
+  return new constructor(pagePromise.then(function (page) {
     page.onCallback = function (args) {
       // TODO: also consider different scenarios
       try {
