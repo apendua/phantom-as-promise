@@ -8,7 +8,7 @@
     "type": "git",
     "url": "git://github.com/apendua/phantom-as-promise.git"
   },
-  "main": "node-phantom-simple.js",
+  "main": "phantom-as-promise.js",
   "scripts": {
     "test": "./test.js"
   },
