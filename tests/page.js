@@ -98,18 +98,25 @@ describe('Page API.', function () {
           });
       });
 
-      it('Should be able to setTimeout on client.', function () {
+      it('should be able to setTimeout on client.', function () {
         var startTime = (new Date()).getTime();
         return pageAsPromise
           .promise(function (resolve) {
-            setTimeout(resolve, 2000);
+            setTimeout(resolve, 500);
           })
           .then(function () {
             var endTime = (new Date()).getTime();
-            expect(endTime - startTime).to.be.at.least(2000);
+            expect(endTime - startTime).to.be.at.least(500);
           });
       });
 
+      it('should be able to wait on client.', function () {
+        var limit = Date.now() + 1000;
+        return pageAsPromise
+          .wait(2000, 'until one second passed', function (limit) {
+            return Date.now() > limit;
+          }, limit);
+      });
 
     });
 

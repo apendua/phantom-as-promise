@@ -101,6 +101,51 @@ module.exports = {
     }); // then
   }, // promise
 
+
+  wait: function (timeout, message, code) {
+    var self = this;
+    var args = Array.prototype.slice.call(arguments, 3).map(function (arg) {
+      return JSON.stringify(arg);
+    });
+    var res_event = crypto.randomBytes(8).toString('hex');
+    var err_event = crypto.randomBytes(8).toString('hex');
+    return self.then(function () {
+      if (args.length > code.length) {
+        throw new Error('You passed too many arguments: ' + args.length + ' given but expected ' + code.length + '.');
+      }
+      return new Promise(function (resolve, reject) {
+        self.once(res_event, function (res) {
+          resolve(typeof res !== 'boolean' ? res : undefined);
+        })
+        self.once(err_event, function (err) {
+          reject(new Error(typeof err === 'object' ? err.message : err));
+        });
+        self.evaluate(
+          'function () {\n' +
+          '  var handle = null;\n' +
+          '  (function test() {\n' +
+          '    var result;\n' +
+          '    try {\n' +
+          '      result = (' + code.toString() + '(' + args.join(', ') + '));\n' +
+          '      if (result) {\n' +
+          '        emit("' + res_event + '", result);\n' +
+          '      } else {\n' +
+          '        handle = setTimeout(test, 200);\n' + // repeat after 1/5 sec.
+          '      }\n' +
+          '    } catch (err) {\n' +
+          '      emit("' + err_event + '", err.toString());\n' +
+          '    }\n' +
+          '  }());\n' +
+          '  setTimeout(function () {\n' +
+          '    clearTimeout(handle);\n' +
+          '    emit("' + err_event + '", "I have been waiting for ' + timeout + ' ms ' + message + ', but it did not happen.");\n' +
+          '  }, ' + timeout + ');\n' +
+          '}\n'
+        );
+      }); // new Promise
+    }); // then
+  }, // wait
+
 };
 /*
 var makeBoundedPromise = function (self, constructor, connector, promise) {
@@ -220,52 +265,6 @@ var makeBoundedPromise = function (self, constructor, connector, promise) {
       throw new Error('Expected an exception to be throw.')
     }, callback);
   };
-
-  self.wait = function (timeout, message, code) {
-    var args = _.toArray(arguments).splice(3).map(function (arg) {
-      return JSON.stringify(arg);
-    });
-    var res_event = crypto.randomBytes(8).toString('hex');
-    var err_event = crypto.randomBytes(8).toString('hex');
-    return self.then(function () {
-      if (args.length > code.length) {
-        throw new Error('You passed too many arguments: ' + args.length + ' given but expected ' + code.length + '.');
-      }
-      return new Promise(function (resolve, reject) {
-        connector.eval(
-          'function () {\n' +
-          '  var handle = null;\n' +
-          '  (function test() {\n' +
-          '    var result;\n' +
-          '    try {\n' +
-          '      result = (' + code.toString() + '(' + args.join(', ') + '));\n' +
-          '      if (result) {\n' +
-          '        emit("' + res_event + '", result);\n' +
-          '      } else {\n' +
-          '        handle = setTimeout(test, 200);\n' + // repeat after 1/5 sec.
-          '      }\n' +
-          '    } catch (err) {\n' +
-          '      emit("' + err_event + '", err.toString());\n' +
-          '    }\n' +
-          '  }());\n' +
-          '  setTimeout(function () {\n' +
-          '    clearTimeout(handle);\n' +
-          '    emit("' + err_event + '", "I have been waiting for ' + timeout + ' ms ' + message + ', but it did not happen.");\n' +
-          '  }, ' + timeout + ');\n' +
-          '}\n'
-        ).once(res_event, function (res) {
-          if (typeof res !== 'boolean') {
-            resolve(res);
-          } else {
-            resolve();
-          }
-        })
-         .once(err_event, function (err) {
-          reject(new Error(_.isObject(err) ? err.message : err));
-        });
-      }); // PROMISE
-    }); // THEN
-  }; // WAIT
   
 }; // makeBoundedPromise
 
