@@ -1,7 +1,7 @@
 {
   "author": "Tomasz Lenarcik (apendua@gmail.com)",
   "name": "phantom-as-promise",
-  "description": "Simple and reliable bridge between Node.js and PhantomJS",
+  "description": "A minimalistic toolset which makes writing browser tests easy-peasy.",
   "version": "0.0.1",
   "homepage": "https://github.com/apendua/phantom-as-promise",
   "repository": {

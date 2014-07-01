@@ -1,4 +1,4 @@
-# phantom-as-promise
+# phantom-as-promise [![Build Status](https://travis-ci.org/apendua/phantom-as-promise.svg?branch=master)](https://travis-ci.org/apendua/phantom-as-promise)
 
 **Phantom-as-Promise** is a minimalistic toolset which makes writing browser tests easy-peasy.
 If you think that web drivers generally sucks, then this is probably a package for you.
