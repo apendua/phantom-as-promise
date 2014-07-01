@@ -22,8 +22,12 @@ describe('Page API.', function () {
   });
 
   before(function () {
-    phantomAsPromise = new PhantomAsPromise();
-    pageAsPromise = new PageAsPromise(phantomAsPromise.createPage(), meteor_helpers);
+    phantomAsPromise = new PhantomAsPromise({}, meteor_helpers);
+    pageAsPromise = phantomAsPromise.page({
+      pageSpecificHelper: function () {
+        return this.sleep(100);
+      },
+    });
     return Promise.all([
       phantomAsPromise, pageAsPromise
     ]);
@@ -138,7 +142,7 @@ describe('Page API.', function () {
           .getText('h1')
           .then(function (text) {
             expect(text).to.match(/^Hello/);
-          })
+          });
       });
 
 
@@ -185,6 +189,10 @@ describe('Page API.', function () {
             }, 100);
           })
         ]);
+      });
+
+      it('should be able to use page-specific helpers.', function () {
+        return pageAsPromise.pageSpecificHelper();
       });
 
     });

@@ -8,13 +8,15 @@ module.exports.PhantomAsPromise = PhantomAsPromise;
 module.exports.PageAsPromise = PageAsPromise;
 module.exports.meteor_helpers = require('./meteor');
 
-function PhantomAsPromise (options, helpers) {
+function PhantomAsPromise (options, instanceSpecificHelpers) {
   var constructor = promesify({
     methods: [ 'createPage', 'injectJs', 'addCookie', 'clearCookies', 'deleteCookie', 'set', 'get', 'exit' ]
   });
 
-  constructor.prototype.page = function () {
-    return new PageAsPromise(this.createPage(), helpers);
+  var listOfHelpers = merge([], instanceSpecificHelpers);
+
+  constructor.prototype.page = function (pageSpecificHelpers) {
+    return new PageAsPromise(this.createPage(), merge(listOfHelpers, pageSpecificHelpers));
   };
 
   return new constructor(new Promise(function (resolve, reject) {
@@ -22,15 +24,10 @@ function PhantomAsPromise (options, helpers) {
   }));
 }
 
-function PageAsPromise(pagePromise, helpers) {
-  var all_helpers = [ require('./helpers') ];
-
-  if (helpers) {
-    all_helpers.push(helpers);
-  }
+function PageAsPromise(pagePromise, customPageHelpers) {
 
   var constructor = promesify({
-    helpers: all_helpers,
+    helpers: merge(require('./helpers'), customPageHelpers),
     methods: [
       'addCookie', 'childFramesCount', 'childFramesName', 'clearCookies', 'close',
       'currentFrameName', 'deleteCookie', 'evaluateJavaScript',
@@ -74,4 +71,18 @@ function either(first) {
       };
     }
   };
+}
+
+function merge() {
+  var list = [], listOrObject, i;
+  for (i = 0; i < arguments.length; i++) {
+    listOrObject = arguments[i];
+    if (Array.isArray(listOrObject)) {
+      list.push.apply(list, listOrObject);
+    } else if (listOrObject && typeof listOrObject === 'object') {
+      list.push(listOrObject);
+    }
+    // ignore falsy and non object values
+  }
+  return list;
 }
