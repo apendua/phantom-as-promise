@@ -36,6 +36,13 @@ function promesify(config) {
       throw new Error('Expected an exception to be throw.')
     }, callback);
   };
+  constructor.prototype.sleep = function (timeout) {
+    return this.then(function () {
+      return new Promise(function (resolve, reject) {
+        setTimeout(resolve, timeout || DEFAULT_TIMEOUT);
+      });
+    });
+  };
   constructor.prototype.switchTo = function (anotherOperand) {
     return this.then(function () {
       return new constructor(anotherOperand, Promise.resolve(this._promise));

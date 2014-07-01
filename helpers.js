@@ -15,14 +15,6 @@ module.exports = {
     return this.injectJs(path.join(__dirname, 'fixtures.js'));
   },
 
-  sleep: function (timeout) {
-    return this.then(function () {
-      return new Promise(function (resolve, reject) {
-        setTimeout(resolve, timeout || DEFAULT_TIMEOUT);
-      });
-    });
-  },
-
   eval: function (code) {
     var self = this;
     var args = Array.prototype.slice.call(arguments, 1).map(function (arg) {
