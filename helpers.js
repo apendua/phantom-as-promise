@@ -121,7 +121,7 @@ module.exports = {
           '      if (result) {\n' +
           '        emit("' + res_event + '", result);\n' +
           '      } else {\n' +
-          '        handle = setTimeout(test, 200);\n' + // repeat after 1/5 sec.
+          '        handle = setTimeout(test, 50);\n' + // repeat after 1/20 sec.
           '      }\n' +
           '    } catch (err) {\n' +
           '      emit("' + err_event + '", err.toString());\n' +
