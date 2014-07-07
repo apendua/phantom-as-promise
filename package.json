@@ -2,7 +2,7 @@
   "author": "Tomasz Lenarcik (apendua@gmail.com)",
   "name": "phantom-as-promise",
   "description": "A minimalistic toolset which makes writing browser tests easy-peasy.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "homepage": "https://github.com/apendua/phantom-as-promise",
   "repository": {
     "type": "git",
