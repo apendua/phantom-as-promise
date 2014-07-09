@@ -4,6 +4,8 @@ var events = require('events');
 var Promise = require('es6-promise').Promise;
 var util = require('util');
 
+var DEFAULT_TIMEOUT = parseInt(process.env.DEFAULT_TIMEOUT) || 10000;
+
 module.exports = promesify;
 
 function promesify(config) {
