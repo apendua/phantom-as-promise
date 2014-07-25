@@ -20,6 +20,7 @@ possible test would look more or less like this:
 describe('Repository persitence,', function () {
 
   var phantom = new require('phantom-as-promise').PhantomAsPromise();
+  var page = null;
   
   before(function () {
     return page = phantom.page();
