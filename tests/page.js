@@ -107,11 +107,11 @@ describe('Page API.', function () {
         var startTime = (new Date()).getTime();
         return pageAsPromise
           .promise(function (resolve) {
-            setTimeout(resolve, 500);
+            setTimeout(resolve, 1000);
           })
           .then(function () {
             var endTime = (new Date()).getTime();
-            expect(endTime - startTime).to.be.at.least(500);
+            expect(endTime - startTime).to.be.at.least(1000);
           });
       });
 
