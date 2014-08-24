@@ -46,9 +46,7 @@ function promesify(config) {
     });
   };
   constructor.prototype.switchTo = function (anotherOperand) {
-    return this.then(function () {
-      return new constructor(anotherOperand, Promise.resolve(this._promise));
-    });
+    return new anotherOperand.constructor(anotherOperand, Promise.resolve(this._promise));
   };
   // add methods related to operand
   methods.forEach(function (method) {
