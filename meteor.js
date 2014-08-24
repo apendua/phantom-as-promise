@@ -47,6 +47,8 @@ module.exports = {
       var controller = Router.current();
       if (controller && controller.path === path && controller.ready()) {
         return true;
+      } else {
+        Router.go(path);
       }
     }, path);
   },
