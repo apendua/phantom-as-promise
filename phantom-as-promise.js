@@ -37,8 +37,8 @@ function PageAsPromise(pagePromise, customPageHelpers) {
       'switchToFrame', 'switchToChildFrame', 'switchToChildFrame', 'switchToMainFrame',
       'switchToParentFrame', 'uploadFile',
       // these should be treated somewhat differently
-      'evaluate', 'set', 'get', 'setFn', 'once'
-      // --------------------------------------
+      'evaluate', 'set', 'get', 'setFn', 'once', 'on'
+      // --------------------------------------------
     ]
   });
 
