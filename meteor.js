@@ -44,8 +44,11 @@ module.exports = {
       Router.go(path);
     }, path)
     .wait(timeout || helpers.default_timeout, 'until current path is ' + path, function (path) {
+      
       var controller = Router.current();
-      if (controller && controller.path === path && controller.ready()) {
+      var pathOK = (window.location.pathname + window.location.search + window.location.hash === path);
+
+      if (controller && pathOK && controller.ready()) {
         return true;
       } else {
         Router.go(path);
