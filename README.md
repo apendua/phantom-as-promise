@@ -13,7 +13,7 @@ namely [node-phantom-simple](https://github.com/baudehlo/node-phantom-simple).
 But this time we will brought your code to the world of promises with
 a good help of [es6-promise](https://github.com/jakearchibald/es6-promise) library,
 and as you will easily see - if you don't know it yet - it's a real game changer.
-Assuming it would be written in [mocha](http://visionmedia.github.io/mocha/), the simplest
+Assuming it would be written in [mocha](http://mochajs.org/), the simplest
 possible test would look more or less like this:
 
 ```javascript
